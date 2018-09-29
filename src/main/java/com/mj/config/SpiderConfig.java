@@ -4,8 +4,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import com.mj.spider.downloader.MJDownloader;
+import com.mj.spider.pageprocesser.MJProcesser;
+import com.mj.spider.pipeline.MJDBPipeline;
+import com.mj.spider.scheduler.MJScheduler;
+
 import redis.clients.jedis.JedisPool;
-import us.codecraft.webmagic.scheduler.RedisPriorityScheduler;
+import us.codecraft.webmagic.Spider;
 
 /**
  * 爬虫配置
@@ -20,8 +25,16 @@ public class SpiderConfig {
 	@Autowired
 	private JedisPool jedisPool;
 
+	private MJScheduler getScheduler() {
+		return new MJScheduler(jedisPool);
+	}
+
 	@Bean
-	public RedisPriorityScheduler getRedisPriorityScheduler() {
-		return new RedisPriorityScheduler(jedisPool);
+	public Spider getSpider() {
+		return Spider.create(MJProcesser.getPageProcessor("")).setDownloader(new MJDownloader())
+				.setScheduler(getScheduler())
+				.addPipeline(new MJDBPipeline())
+				.addUrl("")
+				.thread(3);
 	}
 }
